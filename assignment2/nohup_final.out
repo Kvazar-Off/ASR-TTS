@@ -1,0 +1,1328 @@
+nohup: ignoring input
+Loading datasets ...
+  LibriSpeech test-other: 200 samples
+  Earnings22 test:        200 samples
+Loading acoustic model ...
+Loading weights:   0%|          | 0/212 [00:00<?, ?it/s]Loading weights: 100%|██████████| 212/212 [00:00<00:00, 9188.34it/s]
+[1mWav2Vec2ForCTC LOAD REPORT[0m from: facebook/wav2vec2-base-100h
+Key                           | Status     | 
+------------------------------+------------+-
+wav2vec2.mask_time_emb_vector | UNEXPECTED | 
+wav2vec2.masked_spec_embed    | MISSING    | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING[3m	:those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.[0m
+Pre-computing logits for LibriSpeech ...
+    [20/200] logits computed
+    [40/200] logits computed
+    [60/200] logits computed
+    [80/200] logits computed
+    [100/200] logits computed
+    [120/200] logits computed
+    [140/200] logits computed
+    [160/200] logits computed
+    [180/200] logits computed
+    [200/200] logits computed
+Pre-computing logits for Earnings22 ...
+    [20/200] logits computed
+    [40/200] logits computed
+    [60/200] logits computed
+    [80/200] logits computed
+    [100/200] logits computed
+    [120/200] logits computed
+    [140/200] logits computed
+    [160/200] logits computed
+    [180/200] logits computed
+    [200/200] logits computed
+
+============================================================
+TASK 1 — Greedy decoding (LibriSpeech test-other)
+============================================================
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+  Greedy: WER=11.22%  CER=3.81%
+  Saved -> results/task1_greedy.csv
+  Saved -> results/task1_metrics.csv
+
+============================================================
+TASK 2 — Beam search (LibriSpeech test-other)
+============================================================
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+  Beam (width=10): WER=11.07%  CER=3.77%
+  Saved -> results/task2_beam.csv
+
+  --- beam_width sweep ---
+  beam_width=1 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    width=1: WER=11.24%  CER=3.80%
+  beam_width=3 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    width=3: WER=11.15%  CER=3.78%
+  beam_width=10 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    width=10: WER=11.07%  CER=3.77%
+  beam_width=50 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    width=50: WER=11.10%  CER=3.77%
+  Saved -> results/task2_beam_width_sweep.csv
+  Saved -> results/task2_beam_width_sweep.png
+
+============================================================
+TASK 3 — Temperature sweep, greedy (LibriSpeech test-other)
+============================================================
+  T=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    T=0.5: WER=11.22%  CER=3.81%
+  T=0.8 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    T=0.8: WER=11.22%  CER=3.81%
+  T=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    T=1.0: WER=11.22%  CER=3.81%
+  T=1.2 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    T=1.2: WER=11.22%  CER=3.81%
+  T=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    T=1.5: WER=11.22%  CER=3.81%
+  T=2.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+Loading the LM will be faster if you build a binary file.
+Reading /data/tsa/itmo/ASR_TTS/assignment2/lm/3-gram.pruned.1e-7.arpa.gz
+----5---10---15---20---25---30---35---40---45---50---55---60---65---70---75---80---85---90---95--100
+****************************************************************************************************
+    T=2.0: WER=11.22%  CER=3.81%
+  Saved -> results/task3_temperature_sweep.csv
+  Saved -> results/task3_temperature_sweep.png
+
+============================================================
+TASK 4 — Beam + 3-gram LM shallow fusion (LibriSpeech)
+============================================================
+  alpha=0.01, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.01 beta=0.0: WER=11.05%  CER=3.77%
+  alpha=0.01, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.01 beta=0.5: WER=11.00%  CER=3.75%
+  alpha=0.01, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.01 beta=1.0: WER=11.20%  CER=3.78%
+  alpha=0.01, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.01 beta=1.5: WER=11.24%  CER=3.78%
+  alpha=0.05, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.05 beta=0.0: WER=11.02%  CER=3.78%
+  alpha=0.05, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.05 beta=0.5: WER=11.12%  CER=3.78%
+  alpha=0.05, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.05 beta=1.0: WER=11.05%  CER=3.76%
+  alpha=0.05, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.05 beta=1.5: WER=11.22%  CER=3.79%
+  alpha=0.1, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.1 beta=0.0: WER=11.22%  CER=3.80%
+  alpha=0.1, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.1 beta=0.5: WER=11.12%  CER=3.77%
+  alpha=0.1, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.1 beta=1.0: WER=11.17%  CER=3.79%
+  alpha=0.1, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.1 beta=1.5: WER=11.34%  CER=3.82%
+  alpha=0.5, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.5 beta=0.0: WER=11.88%  CER=3.93%
+  alpha=0.5, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.5 beta=0.5: WER=11.49%  CER=3.89%
+  alpha=0.5, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.5 beta=1.0: WER=11.32%  CER=3.87%
+  alpha=0.5, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.5 beta=1.5: WER=11.12%  CER=3.86%
+  alpha=1.0, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=1.0 beta=0.0: WER=13.96%  CER=4.27%
+  alpha=1.0, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=1.0 beta=0.5: WER=13.52%  CER=4.21%
+  alpha=1.0, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=1.0 beta=1.0: WER=13.03%  CER=4.13%
+  alpha=1.0, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=1.0 beta=1.5: WER=12.59%  CER=4.09%
+  alpha=2.0, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=2.0 beta=0.0: WER=26.28%  CER=5.97%
+  alpha=2.0, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=2.0 beta=0.5: WER=24.15%  CER=5.71%
+  alpha=2.0, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=2.0 beta=1.0: WER=22.10%  CER=5.42%
+  alpha=2.0, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=2.0 beta=1.5: WER=20.09%  CER=5.19%
+  alpha=5.0, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=5.0 beta=0.0: WER=92.10%  CER=18.98%
+  alpha=5.0, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=5.0 beta=0.5: WER=91.03%  CER=18.54%
+  alpha=5.0, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=5.0 beta=1.0: WER=88.58%  CER=17.52%
+  alpha=5.0, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+Loading the LM will be faster if you build a binary file.
+Reading /data/tsa/itmo/ASR_TTS/assignment2/lm/4-gram.arpa.gz
+----5---10---15---20---25---30---35---40---45---50---55---60---65---70---75---80---85---90---95--100
+****************************************************************************************************
+      alpha=5.0 beta=1.5: WER=85.68%  CER=16.66%
+  Saved -> results/task4_lm_sweep.csv
+
+  Best config: alpha=0.01, beta=0.5, WER=11.00%
+  Saved -> results/task4_lm_sweep_heatmap.png
+
+============================================================
+TASK 5 — Beam + 4-gram LM (LibriSpeech)
+============================================================
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+  4-gram (alpha=0.01, beta=0.5): WER=11.02%  CER=3.75%
+  Saved -> results/task5_4gram.csv
+  Saved -> results/task5_metrics.csv
+
+============================================================
+TASK 6 — LM rescoring (LibriSpeech)
+============================================================
+  alpha=0.01, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.01 beta=0.0: WER=11.07%  CER=3.77%
+  alpha=0.01, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.01 beta=0.5: WER=11.02%  CER=3.75%
+  alpha=0.01, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.01 beta=1.0: WER=11.10%  CER=3.76%
+  alpha=0.01, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.01 beta=1.5: WER=11.00%  CER=3.74%
+  alpha=0.05, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.05 beta=0.0: WER=11.07%  CER=3.77%
+  alpha=0.05, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.05 beta=0.5: WER=11.02%  CER=3.75%
+  alpha=0.05, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.05 beta=1.0: WER=11.10%  CER=3.76%
+  alpha=0.05, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.05 beta=1.5: WER=11.00%  CER=3.74%
+  alpha=0.1, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.1 beta=0.0: WER=11.07%  CER=3.77%
+  alpha=0.1, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.1 beta=0.5: WER=11.02%  CER=3.75%
+  alpha=0.1, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.1 beta=1.0: WER=11.10%  CER=3.76%
+  alpha=0.1, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.1 beta=1.5: WER=11.00%  CER=3.74%
+  alpha=0.5, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.5 beta=0.0: WER=11.22%  CER=3.79%
+  alpha=0.5, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.5 beta=0.5: WER=11.07%  CER=3.77%
+  alpha=0.5, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.5 beta=1.0: WER=11.02%  CER=3.75%
+  alpha=0.5, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=0.5 beta=1.5: WER=11.07%  CER=3.76%
+  alpha=1.0, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=1.0 beta=0.0: WER=11.34%  CER=3.80%
+  alpha=1.0, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=1.0 beta=0.5: WER=11.07%  CER=3.77%
+  alpha=1.0, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=1.0 beta=1.0: WER=11.00%  CER=3.76%
+  alpha=1.0, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=1.0 beta=1.5: WER=11.10%  CER=3.76%
+  alpha=2.0, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=2.0 beta=0.0: WER=11.51%  CER=3.83%
+  alpha=2.0, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=2.0 beta=0.5: WER=11.37%  CER=3.81%
+  alpha=2.0, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=2.0 beta=1.0: WER=11.27%  CER=3.79%
+  alpha=2.0, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=2.0 beta=1.5: WER=11.07%  CER=3.77%
+  alpha=5.0, beta=0.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=5.0 beta=0.0: WER=12.12%  CER=3.91%
+  alpha=5.0, beta=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=5.0 beta=0.5: WER=11.83%  CER=3.88%
+  alpha=5.0, beta=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=5.0 beta=1.0: WER=11.81%  CER=3.87%
+  alpha=5.0, beta=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+      alpha=5.0 beta=1.5: WER=11.68%  CER=3.85%
+  Saved -> results/task6_rescore_sweep.csv
+
+  Best rescoring config: alpha=0.01, beta=1.5, WER=11.00%
+
+  --- Qualitative comparison (beam vs SF vs rescoring) ---
+
+  REF : then as archy stood in the dark literally aghast with astonishment he heard the faint rustling once more and again all was silent
+  BEAM: then as archi stood in the dark literally aghased with astonishment he heard the faint rustling once more and again all was silent
+  SF  : then as arche stood in the dark literally a ghased with astonishment he heard the faint rustling once more and again all was silent   [error]
+  RS  : then as archi stood in the dark literally aghased with astonishment he heard the faint rustling once more and again all was silent   [same]
+
+  REF : he laughed but it was a curious kind of laugh full of vexation injured amour propre as the french call our love of our own dignity of which archibald raystoke in the full flush of his young belief in his importance as a british officer had a pretty good stock
+  BEAM: he laughed but it was a curious kind of laugh full of vexation injured amou propra as the prench callar alove of our own dignity of which archabald ray stroke in the full flush of his young belief in his importance as a british officer had a petty good stock
+  SF  : he laughed but it was a curious kind of laugh full of vexation injured amou propra as the prench callar a love of our own dignity of which archabald ray stroke in the full flush of his young belief in his importance as a british officer had a petty good stock   [error]
+  RS  : he laughed but it was a curious kind of laugh full of vexation injured amou propra as the prench callar alove of our own dignity of which archabald ray stroke in the full flush of his young belief in his importance as a british officer had a petty good stock   [same]
+
+  REF : the kick he had received was a foretaste of what he might expect and after a little consideration he came to the conclusion that his duty was to escape and get back to the cutter as quickly as he could
+  BEAM: the kickhe had received was a foretaste of what he might expect and after a little consideration he came to the conclusion that his duty was to escape and get back to the cutter as quickly as he could
+  SF  : the kick he had received was a fore taste of what he might expect and after a little consideration he came to the conclusion that his duty was to escape and get back to the cutter as quickly as he could   [error]
+  RS  : the kick he had received was a fore taste of what he might expect and after a little consideration he came to the conclusion that his duty was to escape and get back to the cutter as quickly as he could   [error]
+
+  REF : a fellow who was shut up in prison for life might do it he said but not in a case like this
+  BEAM: a fellow who as shut up in prison for life might doit he said but not in a case like this
+  SF  : a fellow who as shut up in prison for life might do it he said but not in a case like this   [error]
+  RS  : a fellow who as shut up in prison for life might do it he said but not in a case like this   [error]
+
+  REF : stop here till sir risdon comes down and tell him i'm very sorry that we should have cleared out last night only a born fool saw jerry nandy's lobster boat coming into the cove and came running to say it was a party from the cutter yes father
+  BEAM: stop here till sir rysdon comes down and tell him i'm very sorry that we shoul have cleared out last night only a born fool saw jerry nandy's lobsterboat coming into the cove and came running to say it was a party from the cutter yes father
+  SF  : stop here till sir rysdon comes down and tell him i'm very sorry that we shoul have cleared out last night only a born fool saw jerry nandy's lobster boat coming into the cove and came running to say it was a party from the cutter yes father   [error]
+  RS  : stop here till sir rysdon comes down and tell him i'm very sorry that we shoul have cleared out last night only a born fool saw jerry nandy's lobster boat coming into the cove and came running to say it was a party from the cutter yes father   [error]
+
+  REF : the dull sound of departing steps and a low whistling sound coming down through the skylight window into the cabin where archy raystoke lay with his heavy eyelids pressed down by sleep
+  BEAM: the dull sound of departing steps and a low whistling sound coming down through the skylight window into the cabin where archy raystroke lay with his heavy eyelids pressed down by sleep
+  SF  : the dull sound of departing steps and a low whistling sound coming down through the skylight window into the cabin where archy ray stroke lay with his heavy iyelids pressed down by sleep   [error]
+  RS  : the dull sound of departing steps and a low whistling sound coming down through the skylight window into the cabin where archy raystroke lay with his heavy eyelids pressed down by sleep   [same]
+
+  REF : but how queer for mister gurr to be talking like that to andrew teal the boy who helped the cook
+  BEAM: but how queer for mister gurver to be talking like that to andreuteal the boy who helped the cook
+  SF  : but how queer for mister gurver to be talking like that to andreu teal the boy who helped the cook   [error]
+  RS  : but how queer for mister gurver to be talking like that to andreuteal the boy who helped the cook   [same]
+
+  REF : and why did andy call mister gurr father
+  BEAM: and why did andy call mister gurfather
+  SF  : and why did andy call mister gur father   [error]
+  RS  : and why did andy call mister gur father   [error]
+
+  REF : but at the end of five minutes he stopped and thrust back the dirk into its sheath
+  BEAM: but at the end of five minutes he stopped and thrust back the dirk into i sheefh
+  SF  : but at the end of five minutes he stopped and thrust back the dirk in to a sheefh   [error]
+  RS  : but at the end of five minutes he stopped and thrust back the dirk into i sheefh   [same]
+
+  REF : it was your turn yesterday it's mine to day what a game
+  BEAM: it was your turn yesterday it's mine today what a game
+  SF  : it was your turn yesterday it's mine to day what a game   [corrected]
+  RS  : it was your turn yesterday it's mine to day what a game   [corrected]
+  Saved -> results/task6_qualitative.csv
+
+============================================================
+TASK 7 — All methods on both test sets (domain comparison)
+============================================================
+
+  [Greedy]
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    LibriSpeech: WER=11.22%  CER=3.81%
+    Earnings22 : WER=54.97%  CER=25.58%
+
+  [Beam search]
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    LibriSpeech: WER=11.07%  CER=3.77%
+    Earnings22 : WER=54.94%  CER=25.38%
+
+  [Beam + 3-gram (SF)]
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    LibriSpeech: WER=11.00%  CER=3.75%
+    Earnings22 : WER=55.87%  CER=25.49%
+
+  [Beam + 3-gram (RS)]
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    LibriSpeech: WER=11.00%  CER=3.74%
+    Earnings22 : WER=55.33%  CER=25.38%
+  Saved -> results/task7_comparison.csv
+
+  Summary table:
+  Method                          LibriSpeech WER  LibriSpeech CER  Earnings22 WER  Earnings22 CER
+  Greedy                                  11.22%            3.81%         54.97%          25.58%
+  Beam search                             11.07%            3.77%         54.94%          25.38%
+  Beam + 3-gram (SF)                      11.00%            3.75%         55.87%          25.49%
+  Beam + 3-gram (RS)                      11.00%            3.74%         55.33%          25.38%
+
+------------------------------------------------------------
+TASK 7b — Temperature sweep on Earnings22 (greedy + SF)
+------------------------------------------------------------
+  T=0.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    T=0.5 greedy: WER=54.97%  CER=25.58%
+    T=0.5 SF    : WER=55.27%  CER=25.54%
+  T=1.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    T=1.0 greedy: WER=54.97%  CER=25.58%
+    T=1.0 SF    : WER=55.87%  CER=25.49%
+  T=1.5 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    T=1.5 greedy: WER=54.97%  CER=25.58%
+    T=1.5 SF    : WER=57.44%  CER=25.62%
+  T=2.0 ...
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    T=2.0 greedy: WER=54.97%  CER=25.58%
+    T=2.0 SF    : WER=59.40%  CER=25.88%
+  Saved -> results/task7b_temperature_sweep.csv
+  Saved -> results/task7b_temperature_sweep.png
+
+============================================================
+TASK 8 — Train financial-domain KenLM
+============================================================
+  Financial LM already exists: lm/financial-3gram.arpa.gz
+
+============================================================
+TASK 9 — All LMs on both test sets
+============================================================
+
+  LM: 3-gram LibriSpeech
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    3-gram LibriSpeech (Shallow Fusion) LibriSpeech: WER=11.00%  CER=3.75%
+    3-gram LibriSpeech (Shallow Fusion) Earnings22 : WER=55.87%  CER=25.49%
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+Loading the LM will be faster if you build a binary file.
+Reading /data/tsa/itmo/ASR_TTS/assignment2/lm/financial-3gram.arpa.gz
+----5---10---15---20---25---30---35---40---45---50---55---60---65---70---75---80---85---90---95--100
+****************************************************************************************************
+    3-gram LibriSpeech (Rescoring) LibriSpeech: WER=11.00%  CER=3.74%
+    3-gram LibriSpeech (Rescoring) Earnings22 : WER=55.33%  CER=25.38%
+
+  LM: financial 3-gram
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    financial 3-gram (Shallow Fusion) LibriSpeech: WER=11.02%  CER=3.75%
+    financial 3-gram (Shallow Fusion) Earnings22 : WER=56.02%  CER=25.51%
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    financial 3-gram (Rescoring) LibriSpeech: WER=11.00%  CER=3.74%
+    financial 3-gram (Rescoring) Earnings22 : WER=55.27%  CER=25.38%
+
+  LM: 4-gram LibriSpeech
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    4-gram LibriSpeech (Shallow Fusion) LibriSpeech: WER=11.02%  CER=3.75%
+    4-gram LibriSpeech (Shallow Fusion) Earnings22 : WER=55.93%  CER=25.49%
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    [20/200] done
+    [40/200] done
+    [60/200] done
+    [80/200] done
+    [100/200] done
+    [120/200] done
+    [140/200] done
+    [160/200] done
+    [180/200] done
+    [200/200] done
+    4-gram LibriSpeech (Rescoring) LibriSpeech: WER=11.00%  CER=3.74%
+    4-gram LibriSpeech (Rescoring) Earnings22 : WER=55.33%  CER=25.38%
+  Saved -> results/task9_all_lms.csv
+  Saved -> results/task9_bar_chart.png
+
+============================================================
+Done! All results saved in 'results/'
+============================================================
