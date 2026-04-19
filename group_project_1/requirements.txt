@@ -1,0 +1,6 @@
+torch
+torchaudio
+torchcodec
+num2words
+pandas
+numpy
