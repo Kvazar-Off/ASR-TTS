@@ -1,0 +1,9 @@
+torch
+torchaudio
+torchcodec
+num2words
+pandas
+numpy
+pillow
+matplotlib
+seaborn
