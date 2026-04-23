@@ -2,12 +2,11 @@
 PyTorch Dataset for Russian number ASR competition.
 
 Handles:
-  - variable sample rates → resample to 16 kHz
-  - wav + mp3 formats (via torchaudio)
-  - text normalization: int → Russian words → char indices
+  - resample to 16 kHz
+  - wav + mp3 formats
+  - text normalization: int → words → char indices
   - SpecAugment + additive noise augmentation
 """
-from __future__ import annotations
 import random
 from pathlib import Path
 from typing import Optional
@@ -16,6 +15,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 import torchaudio
+import torchaudio.functional as AF
 import torchaudio.transforms as T
 from torch.utils.data import Dataset
 
@@ -52,19 +52,22 @@ def make_mel_transform(sample_rate: int = TARGET_SR) -> T.MelSpectrogram:
 _mel_transform = make_mel_transform()
 
 
+def _to_mono_16k(waveform: torch.Tensor, sr: int) -> torch.Tensor:
+    if waveform.dim() == 1:
+        waveform = waveform.unsqueeze(0)
+    if waveform.shape[0] > 1:
+        waveform = waveform.mean(0, keepdim=True)
+    if sr != TARGET_SR:
+        waveform = T.Resample(sr, TARGET_SR)(waveform)
+    return waveform
+
+
 def wav_to_mel(waveform: torch.Tensor, sr: int) -> torch.Tensor:
     """
     waveform: (channels, T)  or  (T,)
     returns:  (T_frames, N_MELS)  — log mel spectrogram
     """
-    if waveform.dim() == 1:
-        waveform = waveform.unsqueeze(0)
-    if waveform.shape[0] > 1:
-        waveform = waveform.mean(0, keepdim=True)
-
-    if sr != TARGET_SR:
-        resampler = T.Resample(sr, TARGET_SR)
-        waveform = resampler(waveform)
+    waveform = _to_mono_16k(waveform, sr)
 
     mel = _mel_transform(waveform)          # (1, n_mels, T)
     mel = mel.squeeze(0).T                  # (T, n_mels)
@@ -112,9 +115,9 @@ def spec_augment(
 class NumbersDataset(Dataset):
     """
     Args:
-        csv_path:   path to train.csv / dev.csv
-        data_root:  root folder containing audio files
-        augment:    apply SpecAugment (train only)
+        csv_path:
+        data_root
+        augment:    apply SpecAugment
         noise_dir:  optional folder with .wav noise files for SNR mixing
     """
 
@@ -158,12 +161,16 @@ class NumbersDataset(Dataset):
         audio_path = self.data_root / row["filename"]
 
         waveform, sr = torchaudio.load(str(audio_path))
+        waveform = _to_mono_16k(waveform, sr)
+        sr = TARGET_SR
 
-        # Optional: additive noise augmentation
+        if self.augment:
+            waveform = self._apply_waveform_augmentations(waveform)
+
         if self.augment and self.noise_clips and random.random() < 0.4:
             waveform = self._add_noise(waveform, sr)
 
-        mel = wav_to_mel(waveform, sr)   # (T, n_mels)
+        mel = wav_to_mel(waveform, sr) # (T, n_mels)
 
         if self.mel_mean is not None and self.mel_std is not None:
             mel = (mel - self.mel_mean) / self.mel_std
@@ -171,7 +178,7 @@ class NumbersDataset(Dataset):
         if self.augment:
             mel = spec_augment(mel)
 
-        # Time-warp: stretch/squeeze by ±5%
+        # Time-warp: stretch/squeeze by 5%
         if self.augment and random.random() < 0.3:
             mel = self._time_warp(mel)
 
@@ -181,25 +188,81 @@ class NumbersDataset(Dataset):
         label_ids = encode_text(label_words, self.char2idx)
 
         return {
-            "mel": mel,                          # (T, n_mels)
+            "mel": mel, # (T, n_mels)
             "label": torch.tensor(label_ids, dtype=torch.long),
             "mel_len": mel.shape[0],
             "label_len": len(label_ids),
             "filename": row["filename"],
             "transcription": label_int,
+            "spk_id": row["spk_id"] if "spk_id" in row else None,
+            "gender": row["gender"] if "gender" in row else None,
+            "ext": row["ext"] if "ext" in row else Path(row["filename"]).suffix.lstrip("."),
         }
+
+    def _apply_waveform_augmentations(self, waveform: torch.Tensor) -> torch.Tensor:
+        waveform = waveform.clone()
+
+        if random.random() < 0.5:
+            gain_db = random.uniform(-6.0, 6.0)
+            waveform = waveform * (10 ** (gain_db / 20.0))
+
+        if random.random() < 0.35:
+            waveform = self._codec_like_degradation(waveform)
+
+        if random.random() < 0.25:
+            waveform = self._bandlimit_degradation(waveform)
+
+        if random.random() < 0.15:
+            waveform = self._temporal_dropout(waveform)
+
+        if random.random() < 0.2:
+            waveform = torch.tanh(waveform * random.uniform(1.05, 1.5))
+
+        return waveform.clamp(min=-1.0, max=1.0)
+
+    @staticmethod
+    def _codec_like_degradation(waveform: torch.Tensor) -> torch.Tensor:
+        down_sr = random.choice([8_000, 10_000, 12_000])
+        degraded = T.Resample(TARGET_SR, down_sr)(waveform)
+        degraded = T.Resample(down_sr, TARGET_SR)(degraded)
+
+        bits = random.choice([6, 7, 8])
+        levels = float(2 ** bits - 1)
+        degraded = torch.round((degraded.clamp(-1.0, 1.0) + 1.0) * 0.5 * levels) / levels
+        degraded = degraded * 2.0 - 1.0
+
+        if random.random() < 0.5:
+            cutoff = random.choice([2800, 3200, 3600, 4200])
+            degraded = AF.lowpass_biquad(degraded, TARGET_SR, cutoff)
+
+        return degraded
+
+    @staticmethod
+    def _bandlimit_degradation(waveform: torch.Tensor) -> torch.Tensor:
+        down_sr = random.choice([12_000, 14_000])
+        degraded = T.Resample(TARGET_SR, down_sr)(waveform)
+        degraded = T.Resample(down_sr, TARGET_SR)(degraded)
+        if random.random() < 0.5:
+            cutoff = random.choice([3000, 3800, 5000, 6500])
+            degraded = AF.lowpass_biquad(degraded, TARGET_SR, cutoff)
+        return degraded
+
+    @staticmethod
+    def _temporal_dropout(waveform: torch.Tensor) -> torch.Tensor:
+        total = waveform.shape[-1]
+        max_span = max(1, int(total * 0.03))
+        for _ in range(random.randint(1, 3)):
+            span = random.randint(max(1, max_span // 4), max_span)
+            start = random.randint(0, max(0, total - span))
+            waveform[..., start:start + span] *= random.uniform(0.0, 0.3)
+        return waveform
 
     def _add_noise(self, waveform: torch.Tensor, sr: int) -> torch.Tensor:
         """Mix a random noise clip at a random SNR."""
         if not self.noise_clips:
             return waveform
 
-        if waveform.dim() == 1:
-            waveform = waveform.unsqueeze(0)
-        if waveform.shape[0] > 1:
-            waveform = waveform.mean(0, keepdim=True)
-        if sr != TARGET_SR:
-            waveform = T.Resample(sr, TARGET_SR)(waveform)
+        waveform = _to_mono_16k(waveform, sr)
 
         noise = random.choice(self.noise_clips)
         if noise.dim() == 1:
@@ -226,7 +289,6 @@ class NumbersDataset(Dataset):
         T_len = mel.shape[0]
         factor = random.uniform(0.95, 1.05)
         new_T = max(1, int(T_len * factor))
-        # use 1D interpolation over time axis
         mel_t = mel.T.unsqueeze(0)  # (1, F, T)
         mel_t = F.interpolate(mel_t, size=new_T, mode="linear", align_corners=False)
         return mel_t.squeeze(0).T  # (new_T, F)
@@ -265,6 +327,9 @@ def collate_fn(batch: list[dict]) -> dict:
         "label_len": label_lens,
         "filename": [b["filename"] for b in batch],
         "transcription": [b["transcription"] for b in batch],
+        "spk_id": [b.get("spk_id") for b in batch],
+        "gender": [b.get("gender") for b in batch],
+        "ext": [b.get("ext") for b in batch],
     }
 
 

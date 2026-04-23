@@ -1,0 +1,32 @@
+[
+  {
+    "epoch": 46,
+    "metric_name": "decode_cer",
+    "metric_value": 0.039882266372332595,
+    "path": "epoch046_decode_cer_0.039882.pt"
+  },
+  {
+    "epoch": 40,
+    "metric_name": "decode_cer",
+    "metric_value": 0.03989698307579102,
+    "path": "epoch040_decode_cer_0.039897.pt"
+  },
+  {
+    "epoch": 60,
+    "metric_name": "decode_cer",
+    "metric_value": 0.0400588668138337,
+    "path": "epoch060_decode_cer_0.040059.pt"
+  },
+  {
+    "epoch": 41,
+    "metric_name": "decode_cer",
+    "metric_value": 0.04166298749080206,
+    "path": "epoch041_decode_cer_0.041663.pt"
+  },
+  {
+    "epoch": 58,
+    "metric_name": "decode_cer",
+    "metric_value": 0.04200147167034584,
+    "path": "epoch058_decode_cer_0.042001.pt"
+  }
+]

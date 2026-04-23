@@ -2,9 +2,11 @@
 CTC decoding: greedy and simple prefix beam search.
 """
 from __future__ import annotations
+from dataclasses import dataclass
 import torch
 from collections import defaultdict
-from text_utils import decode_indices, words_to_num, get_vocab
+from lm_utils import KenLMScorer
+from text_utils import decode_indices, parse_number_text
 
 
 # --------------------------------------------------------------------------- #
@@ -37,29 +39,35 @@ def ctc_greedy_decode(log_probs: torch.Tensor, output_lengths: torch.Tensor) -> 
 
 
 # --------------------------------------------------------------------------- #
-#  Beam search decoder (no LM)                                                #
+#  Beam search decoder (optional LM rescoring)                                #
 # --------------------------------------------------------------------------- #
 
-def ctc_beam_decode(
+@dataclass
+class BeamCandidate:
+    tokens: list[int]
+    acoustic_score: float
+
+
+def ctc_beam_candidates(
     log_probs: torch.Tensor,
     output_length: int,
     beam_width: int = 10,
+    top_paths: int | None = None,
     blank_idx: int = 0,
-) -> list[int]:
+) -> list[BeamCandidate]:
     """
-    Single-sample beam search CTC decoder.
+    Single-sample beam search CTC decoder returning N-best token sequences.
     log_probs: (T, vocab)
-    returns best token sequence
     """
     # prefix beam: {prefix_tuple: (prob_blank, prob_non_blank)}
     NEG_INF = float("-inf")
+    top_paths = beam_width if top_paths is None else max(top_paths, 1)
 
     beams: dict[tuple, list[float]] = {(): [0.0, NEG_INF]}   # prefix → [Pb, Pnb]
 
     for t in range(output_length):
         new_beams: dict[tuple, list[float]] = defaultdict(lambda: [NEG_INF, NEG_INF])
 
-        # Get top-k for speed
         probs_t = log_probs[t]
         top_k = min(beam_width * 2, probs_t.shape[0])
         topk_vals, topk_idx = probs_t.topk(top_k)
@@ -76,7 +84,7 @@ def ctc_beam_decode(
                     nb[0] = _logadd(nb[0], P_total + lp)
                 else:
                     new_prefix = prefix + (c,)
-                    # if c == last char → only blank can extend without repeat
+                    # if c == last char, only blank can extend without repeat
                     if prefix and prefix[-1] == c:
                         nb = new_beams[new_prefix]
                         nb[1] = _logadd(nb[1], Pb + lp)
@@ -99,8 +107,31 @@ def ctc_beam_decode(
             )[:beam_width]
         )
 
-    best = max(beams, key=lambda p: _logadd(beams[p][0], beams[p][1]))
-    return list(best)
+    ranked = sorted(
+        beams.items(),
+        key=lambda kv: _logadd(kv[1][0], kv[1][1]),
+        reverse=True,
+    )[:top_paths]
+    return [
+        BeamCandidate(tokens=list(prefix), acoustic_score=_logadd(pb, pnb))
+        for prefix, (pb, pnb) in ranked
+    ]
+
+
+def ctc_beam_decode(
+    log_probs: torch.Tensor,
+    output_length: int,
+    beam_width: int = 10,
+    blank_idx: int = 0,
+) -> list[int]:
+    candidates = ctc_beam_candidates(
+        log_probs=log_probs,
+        output_length=output_length,
+        beam_width=beam_width,
+        top_paths=1,
+        blank_idx=blank_idx,
+    )
+    return candidates[0].tokens if candidates else []
 
 
 def _logadd(a: float, b: float) -> float:
@@ -123,6 +154,8 @@ def decode_batch(
     idx2char: dict[int, str],
     use_beam: bool = False,
     beam_width: int = 5,
+    kenlm_scorer: KenLMScorer | None = None,
+    lm_top_paths: int | None = None,
 ) -> list[int | None]:
     """
     Decode a batch of log_probs to integer number predictions.
@@ -135,25 +168,59 @@ def decode_batch(
         results = []
         T, B, V = log_probs.shape
         for b in range(B):
-            tokens = ctc_beam_decode(
+            if kenlm_scorer is None:
+                tokens = ctc_beam_decode(
+                    log_probs[:, b, :],
+                    output_lengths[b].item(),
+                    beam_width=beam_width,
+                )
+                results.append(tokens)
+                continue
+
+            candidates = ctc_beam_candidates(
                 log_probs[:, b, :],
                 output_lengths[b].item(),
                 beam_width=beam_width,
+                top_paths=lm_top_paths or beam_width,
             )
-            results.append(tokens)
+            best_tokens = _select_best_candidate(candidates, idx2char, kenlm_scorer)
+            results.append(best_tokens)
     else:
         results = ctc_greedy_decode(log_probs, output_lengths)
 
     preds = []
     for tokens in results:
         text = decode_indices(tokens, idx2char)
-        text = text.strip()
-        num = words_to_num(text)
+        parse_result = parse_number_text(text)
+        num = parse_result.value
         # clamp to valid range
         if num is not None:
             num = max(1000, min(999999, num))
         preds.append(num)
     return preds
+
+
+def _select_best_candidate(
+    candidates: list[BeamCandidate],
+    idx2char: dict[int, str],
+    kenlm_scorer: KenLMScorer,
+) -> list[int]:
+    best_tokens = candidates[0].tokens if candidates else []
+    best_score = float("-inf")
+
+    for candidate in candidates:
+        text = decode_indices(candidate.tokens, idx2char).strip()
+        parse_result = parse_number_text(text)
+        if parse_result.value is None:
+            continue
+
+        lm_text = parse_result.canonical_text or parse_result.normalized_text
+        score = kenlm_scorer.combined_score(candidate.acoustic_score, lm_text)
+        if score > best_score:
+            best_score = score
+            best_tokens = candidate.tokens
+
+    return best_tokens
 
 
 # --------------------------------------------------------------------------- #
@@ -166,7 +233,7 @@ def char_error_rate(reference: str, hypothesis: str) -> float:
     n, m = len(r), len(h)
     if n == 0:
         return float(m > 0)
-    # DP
+
     dp = [[0] * (m + 1) for _ in range(n + 1)]
     for i in range(n + 1): dp[i][0] = i
     for j in range(m + 1): dp[0][j] = j

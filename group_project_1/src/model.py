@@ -3,9 +3,8 @@ Small Conformer-CTC model for Russian number ASR.
 Target: ≤ 5M parameters.
 
 Architecture:
-  MelSpec (80) → ConvSubsampling → Linear → 6×ConformerBlock → Linear → vocab
+  MelSpec -> ConvSubsampling -> Linear -> ConformerBlock -> Linear -> vocab
 """
-from __future__ import annotations
 import math
 import torch
 import torch.nn as nn
@@ -78,13 +77,12 @@ class ConvolutionModule(nn.Module):
         padding = (kernel_size - 1) // 2
         self.norm = nn.LayerNorm(d_model)
         self.net = nn.Sequential(
-            nn.Linear(d_model, 2 * d_model),        # pointwise expand
-            nn.GLU(dim=-1),                           # → d_model
-            # depthwise conv
+            nn.Linear(d_model, 2 * d_model),
+            nn.GLU(dim=-1), 
             nn.Conv1d(d_model, d_model, kernel_size, padding=padding, groups=d_model),
             nn.BatchNorm1d(d_model),
             nn.SiLU(),
-            nn.Conv1d(d_model, d_model, 1),           # pointwise project
+            nn.Conv1d(d_model, d_model, 1),
             nn.Dropout(dropout),
         )
 
@@ -133,7 +131,7 @@ class ConformerBlock(nn.Module):
 
 
 # --------------------------------------------------------------------------- #
-#  Conv subsampling  (factor 4×)                                              #
+#  Conv subsampling                                                           #
 # --------------------------------------------------------------------------- #
 
 class ConvSubsampling(nn.Module):
@@ -150,7 +148,6 @@ class ConvSubsampling(nn.Module):
             nn.Conv2d(d_model, d_model, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
         )
-        # compute output mel dim after 2× stride on freq axis
         out_freq = math.ceil(math.ceil(n_mels / 2) / 2)
         self.proj = nn.Linear(d_model * out_freq, d_model)
         self.dropout = nn.Dropout(dropout)
@@ -236,7 +233,6 @@ class ConformerCTC(nn.Module):
 
         x = self.pos_enc(x)
 
-        # Build padding mask: True = padded position (to ignore in attention)
         B, T2, _ = x.shape
         key_padding_mask = torch.arange(T2, device=x.device).unsqueeze(0) >= output_lengths.unsqueeze(1)
 
@@ -250,7 +246,6 @@ class ConformerCTC(nn.Module):
     @staticmethod
     def _compute_out_lengths(lengths: torch.Tensor, T_out: int) -> torch.Tensor:
         """Approximate output lengths after 2× subsampling twice."""
-        # each stride-2 conv: L_out = ceil(L_in / 2)
         l = torch.ceil(lengths.float() / 2).long()
         l = torch.ceil(l.float() / 2).long()
         return l.clamp(max=T_out)
@@ -264,7 +259,7 @@ class ConformerCTC(nn.Module):
 # --------------------------------------------------------------------------- #
 
 if __name__ == "__main__":
-    vocab_size = 35   # approximate
+    vocab_size = 35
     model = ConformerCTC(vocab_size=vocab_size)
     n_params = model.count_parameters()
     print(f"Parameters: {n_params:,}  ({n_params/1e6:.2f}M)")
