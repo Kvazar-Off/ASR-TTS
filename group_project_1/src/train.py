@@ -12,6 +12,7 @@ Usage:
 import argparse
 import json
 import random
+import sys
 import time
 from pathlib import Path
 
@@ -19,12 +20,19 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from dataset import NumbersDataset, collate_fn, compute_mean_std
 from decode import compute_cer_batch, decode_batch
 from lm_utils import KenLMConfig, KenLMScorer
 from model import ConformerCTC
 from text_utils import get_vocab
+
+# Unbuffered stdout so progress is visible even when piped through tee.
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
 
 
 # --------------------------------------------------------------------------- #
@@ -158,12 +166,13 @@ class TopKCheckpointManager:
 #  Training loop                                                              #
 # --------------------------------------------------------------------------- #
 
-def train_epoch(model, loader, optimizer, criterion, device, scaler=None, scheduler=None):
+def train_epoch(model, loader, optimizer, criterion, device, scaler=None, scheduler=None, epoch_label=""):
     model.train()
     total_loss = 0.0
     n_batches = 0
 
-    for batch in loader:
+    pbar = tqdm(loader, desc=f"train {epoch_label}", dynamic_ncols=True, mininterval=2.0)
+    for batch in pbar:
         mel = batch["mel"].to(device)                 # (B, T, F)
         mel_len = batch["mel_len"].to(device)
         labels = batch["label"].to(device)            # (B, L)
@@ -195,6 +204,8 @@ def train_epoch(model, loader, optimizer, criterion, device, scaler=None, schedu
 
         total_loss += loss.item()
         n_batches += 1
+        if n_batches % 10 == 0:
+            pbar.set_postfix(loss=f"{total_loss / n_batches:.4f}")
 
     return total_loss / max(n_batches, 1)
 
@@ -218,7 +229,8 @@ def evaluate(
     ext_groups: list[str | None] = []
     parse_failures = 0
 
-    for batch in loader:
+    desc = "eval-beam" if use_beam else "eval-greedy"
+    for batch in tqdm(loader, desc=desc, dynamic_ncols=True, mininterval=2.0, leave=False):
         mel = batch["mel"].to(device)
         mel_len = batch["mel_len"].to(device)
 
@@ -268,6 +280,13 @@ def parse_args():
     p.add_argument("--data_root", default="/data/tsa/itmo/ASR_TTS/group_project_1/data/")
     p.add_argument("--output_dir", default="/data/tsa/itmo/ASR_TTS/group_project_1/checkpoints/")
     p.add_argument("--noise_dir", default=None, help="Optional noise folder for augmentation")
+    p.add_argument("--rir_dir", default=None, help="Optional folder of RIR .wav files for reverb augmentation")
+    p.add_argument("--cmvn_mode", choices=["utterance", "global"], default="utterance",
+                   help="Per-utterance CMVN (default) or global mean/std normalization")
+    p.add_argument("--max_aug_clips", type=int, default=500,
+                   help="Cap on number of noise/RIR clips loaded into RAM")
+    p.add_argument("--no_pitch_shift", action="store_true",
+                   help="Disable pitch shift augmentation (heavy on CPU; turn off if CPU-bound)")
     p.add_argument("--epochs", type=int, default=60)
     p.add_argument("--batch_size", type=int, default=32)
     p.add_argument("--lr", type=float, default=3e-4)
@@ -338,9 +357,18 @@ def main():
     vocab_size = len(char2idx) + 1   # +1 for blank at index 0
     print(f"Vocab size: {vocab_size}")
 
-    stats_ds = NumbersDataset(args.train_csv, args.data_root, augment=False)
-    train_ds = NumbersDataset(args.train_csv, args.data_root, augment=True, noise_dir=args.noise_dir)
-    dev_ds = NumbersDataset(args.dev_csv, args.data_root, augment=False)
+    stats_ds = NumbersDataset(
+        args.train_csv, args.data_root, augment=False, cmvn_mode=args.cmvn_mode,
+    )
+    train_ds = NumbersDataset(
+        args.train_csv, args.data_root, augment=True,
+        noise_dir=args.noise_dir, rir_dir=args.rir_dir, cmvn_mode=args.cmvn_mode,
+        max_aug_clips=args.max_aug_clips,
+        use_pitch_shift=not args.no_pitch_shift,
+    )
+    dev_ds = NumbersDataset(
+        args.dev_csv, args.data_root, augment=False, cmvn_mode=args.cmvn_mode,
+    )
 
     train_loader = DataLoader(
         train_ds, batch_size=args.batch_size, shuffle=True,
@@ -372,6 +400,7 @@ def main():
         "n_layers": args.n_layers, "n_heads": args.n_heads,
         "conv_kernel": args.conv_kernel, "dropout": args.dropout,
         "n_params": n_params,
+        "cmvn_mode": args.cmvn_mode,
         "train_args": vars(args),
     }
     with open(output_dir / "config.json", "w") as f:
@@ -395,6 +424,9 @@ def main():
     start_epoch = 0
     best_cer = float("inf")
 
+    mean: torch.Tensor | None = None
+    std: torch.Tensor | None = None
+
     if args.resume:
         start_epoch, best_cer, saved_mean, saved_std = load_checkpoint(
             model, optimizer, scheduler, args.resume
@@ -402,18 +434,22 @@ def main():
         mean = saved_mean
         std = saved_std
         print(f"Resumed from epoch {start_epoch}, best CER={best_cer:.4f}")
-    else:
+    elif args.cmvn_mode == "global":
         print("Computing mel normalization stats...")
         mean, std = compute_mean_std(stats_ds)
 
-    if mean is None or std is None:
-        raise RuntimeError("Failed to initialize mel normalization stats.")
-
-    torch.save({"mean": mean, "std": std}, output_dir / "norm_stats.pt")
-    train_ds.mel_mean = mean
-    train_ds.mel_std = std
-    dev_ds.mel_mean = mean
-    dev_ds.mel_std = std
+    if args.cmvn_mode == "global":
+        if mean is None or std is None:
+            raise RuntimeError("Failed to initialize mel normalization stats.")
+        torch.save({"mean": mean, "std": std}, output_dir / "norm_stats.pt")
+        train_ds.mel_mean = mean
+        train_ds.mel_std = std
+        dev_ds.mel_mean = mean
+        dev_ds.mel_std = std
+    else:
+        # Per-utterance CMVN: write a marker file so inference can detect mode if config.json is missing.
+        torch.save({"cmvn_mode": "utterance"}, output_dir / "norm_stats.pt")
+        print("Using per-utterance CMVN (no global mel stats).")
 
     print("\n" + "="*60)
     print("Training started")
@@ -423,7 +459,8 @@ def main():
     for epoch in range(start_epoch, args.epochs):
         t0 = time.time()
         train_loss = train_epoch(
-            model, train_loader, optimizer, criterion, device, scaler, scheduler
+            model, train_loader, optimizer, criterion, device, scaler, scheduler,
+            epoch_label=f"{epoch+1:03d}/{args.epochs}",
         )
 
         greedy_result = evaluate(model, dev_loader, device, idx2char, use_beam=False)

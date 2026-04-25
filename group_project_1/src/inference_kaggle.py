@@ -14,7 +14,7 @@ import torch
 import torchaudio
 from torch.utils.data import DataLoader, Dataset
 
-from dataset import TARGET_SR, wav_to_mel
+from dataset import TARGET_SR, load_audio, wav_to_mel
 from decode import compute_cer_batch, decode_batch
 from lm_utils import KenLMConfig, KenLMScorer
 from model import ConformerCTC
@@ -60,13 +60,17 @@ class InferenceDataset(Dataset):
         self,
         csv_path: str | Path,
         data_root: str | Path,
-        mel_mean: torch.Tensor,
-        mel_std: torch.Tensor,
+        mel_mean: torch.Tensor | None,
+        mel_std: torch.Tensor | None,
+        cmvn_mode: str = "global",
     ):
+        if cmvn_mode not in {"utterance", "global"}:
+            raise ValueError(f"Unknown cmvn_mode: {cmvn_mode}")
         self.df = pd.read_csv(csv_path)
         self.data_root = Path(data_root)
         self.mel_mean = mel_mean
         self.mel_std = mel_std
+        self.cmvn_mode = cmvn_mode
 
     def __len__(self) -> int:
         return len(self.df)
@@ -74,9 +78,14 @@ class InferenceDataset(Dataset):
     def __getitem__(self, idx: int) -> dict:
         row = self.df.iloc[idx]
         audio_path = self.data_root / row["filename"]
-        waveform, sr = torchaudio.load(str(audio_path))
+        waveform, sr = load_audio(audio_path)
         mel = wav_to_mel(waveform, sr)
-        mel = (mel - self.mel_mean) / self.mel_std
+        if self.cmvn_mode == "utterance":
+            mean = mel.mean(dim=0, keepdim=True)
+            std = mel.std(dim=0, keepdim=True).clamp(min=1e-5)
+            mel = (mel - mean) / std
+        else:
+            mel = (mel - self.mel_mean) / self.mel_std
 
         item = {
             "mel": mel,
@@ -120,7 +129,7 @@ def load_model(
     checkpoint_dir: Path,
     device: torch.device,
     checkpoint_name: str,
-) -> tuple[ConformerCTC, torch.Tensor, torch.Tensor]:
+) -> tuple[ConformerCTC, torch.Tensor | None, torch.Tensor | None, str]:
     with open(checkpoint_dir / "config.json", "r", encoding="utf-8") as f:
         cfg = json.load(f)
 
@@ -139,10 +148,23 @@ def load_model(
     model.load_state_dict(state_dict)
     model.eval()
 
-    norm_stats = torch.load(checkpoint_dir / "norm_stats.pt", map_location="cpu")
-    mel_mean = norm_stats["mean"].float()
-    mel_std = norm_stats["std"].float()
-    return model, mel_mean, mel_std
+    cmvn_mode = cfg.get("cmvn_mode", "global")
+    mel_mean: torch.Tensor | None = None
+    mel_std: torch.Tensor | None = None
+
+    norm_path = checkpoint_dir / "norm_stats.pt"
+    if norm_path.exists():
+        norm_stats = torch.load(norm_path, map_location="cpu")
+        if "mean" in norm_stats and "std" in norm_stats:
+            mel_mean = norm_stats["mean"].float()
+            mel_std = norm_stats["std"].float()
+        if "cmvn_mode" in norm_stats and "cmvn_mode" not in cfg:
+            cmvn_mode = norm_stats["cmvn_mode"]
+
+    if cmvn_mode == "global" and (mel_mean is None or mel_std is None):
+        raise RuntimeError("Global CMVN requested but norm_stats.pt is missing mean/std.")
+
+    return model, mel_mean, mel_std, cmvn_mode
 
 
 @torch.no_grad()
@@ -259,8 +281,8 @@ def main() -> None:
             )
         )
 
-    model, mel_mean, mel_std = load_model(checkpoint_dir, device, args.checkpoint_name)
-    dataset = InferenceDataset(csv_path, data_root, mel_mean, mel_std)
+    model, mel_mean, mel_std, cmvn_mode = load_model(checkpoint_dir, device, args.checkpoint_name)
+    dataset = InferenceDataset(csv_path, data_root, mel_mean, mel_std, cmvn_mode=cmvn_mode)
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -283,6 +305,7 @@ def main() -> None:
 
     print(f"Device: {device}")
     print(f"Checkpoint: {checkpoint_dir / args.checkpoint_name}")
+    print(f"CMVN mode: {cmvn_mode}")
     print(f"Split: {args.split}")
     print(f"Samples: {metrics['num_samples']}")
     if "cer" in metrics:
