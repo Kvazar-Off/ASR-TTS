@@ -70,6 +70,52 @@ def make_mel_transform(sample_rate: int = TARGET_SR) -> T.MelSpectrogram:
 
 _mel_transform = make_mel_transform()
 
+# Cache T.Resample modules keyed by (orig_sr, target_sr).
+# Constructing a Resample module recomputes a windowed-sinc kernel — doing it
+# inline per-sample (as the original code did) was the dominant CPU cost.
+_resample_cache: dict[tuple[int, int], T.Resample] = {}
+
+
+def _freeze(module: torch.nn.Module) -> torch.nn.Module:
+    module.eval()
+    for p in module.parameters():
+        try:
+            p.requires_grad_(False)
+        except Exception:
+            # Skip uninitialized lazy parameters; they will be frozen via no_grad context.
+            pass
+    for b in module.buffers():
+        try:
+            b.requires_grad_(False)
+        except Exception:
+            pass
+    return module
+
+
+def _get_resampler(orig_sr: int, target_sr: int) -> T.Resample:
+    key = (int(orig_sr), int(target_sr))
+    rs = _resample_cache.get(key)
+    if rs is None:
+        rs = _freeze(T.Resample(key[0], key[1]))
+        _resample_cache[key] = rs
+    return rs
+
+
+# Cache PitchShift modules per n_steps. Each module precomputes STFT window/buffers.
+_pitch_shift_cache: dict[int, "T.PitchShift"] = {}
+
+
+def _get_pitch_shifter(n_steps: int) -> "T.PitchShift":
+    n_steps = int(n_steps)
+    ps = _pitch_shift_cache.get(n_steps)
+    if ps is None:
+        ps = _freeze(T.PitchShift(TARGET_SR, n_steps=n_steps))
+        _pitch_shift_cache[n_steps] = ps
+    return ps
+
+
+_freeze(_mel_transform)
+
 
 def _to_mono_16k(waveform: torch.Tensor, sr: int) -> torch.Tensor:
     if waveform.dim() == 1:
@@ -77,7 +123,7 @@ def _to_mono_16k(waveform: torch.Tensor, sr: int) -> torch.Tensor:
     if waveform.shape[0] > 1:
         waveform = waveform.mean(0, keepdim=True)
     if sr != TARGET_SR:
-        waveform = T.Resample(sr, TARGET_SR)(waveform)
+        waveform = _get_resampler(sr, TARGET_SR)(waveform)
     return waveform
 
 
@@ -185,7 +231,7 @@ class NumbersDataset(Dataset):
             try:
                 w, sr = load_audio(p)
                 if sr != TARGET_SR:
-                    w = T.Resample(sr, TARGET_SR)(w)
+                    w = _get_resampler(sr, TARGET_SR)(w)
                 self.noise_clips.append(w.mean(0))
             except Exception:
                 pass
@@ -200,7 +246,7 @@ class NumbersDataset(Dataset):
             try:
                 w, sr = load_audio(p)
                 if sr != TARGET_SR:
-                    w = T.Resample(sr, TARGET_SR)(w)
+                    w = _get_resampler(sr, TARGET_SR)(w)
                 w = w.mean(0)
                 # Trim leading silence + cap length to 0.5s for speed
                 peak = w.abs().argmax().item()
@@ -218,6 +264,10 @@ class NumbersDataset(Dataset):
         return len(self.df)
 
     def __getitem__(self, idx: int) -> dict:
+        with torch.no_grad():
+            return self._get_item(idx)
+
+    def _get_item(self, idx: int) -> dict:
         row = self.df.iloc[idx]
         audio_path = self.data_root / row["filename"]
 
@@ -315,7 +365,8 @@ class NumbersDataset(Dataset):
         if n_steps == 0:
             return waveform
         try:
-            return AF.pitch_shift(waveform, TARGET_SR, n_steps=n_steps)
+            shifter = _get_pitch_shifter(int(n_steps))
+            return shifter(waveform)
         except Exception:
             return waveform
 
@@ -364,8 +415,8 @@ class NumbersDataset(Dataset):
     @staticmethod
     def _codec_like_degradation(waveform: torch.Tensor) -> torch.Tensor:
         down_sr = random.choice([8_000, 10_000, 12_000])
-        degraded = T.Resample(TARGET_SR, down_sr)(waveform)
-        degraded = T.Resample(down_sr, TARGET_SR)(degraded)
+        degraded = _get_resampler(TARGET_SR, down_sr)(waveform)
+        degraded = _get_resampler(down_sr, TARGET_SR)(degraded)
 
         bits = random.choice([6, 7, 8])
         levels = float(2 ** bits - 1)
@@ -381,8 +432,8 @@ class NumbersDataset(Dataset):
     @staticmethod
     def _bandlimit_degradation(waveform: torch.Tensor) -> torch.Tensor:
         down_sr = random.choice([12_000, 14_000])
-        degraded = T.Resample(TARGET_SR, down_sr)(waveform)
-        degraded = T.Resample(down_sr, TARGET_SR)(degraded)
+        degraded = _get_resampler(TARGET_SR, down_sr)(waveform)
+        degraded = _get_resampler(down_sr, TARGET_SR)(degraded)
         if random.random() < 0.5:
             cutoff = random.choice([3000, 3800, 5000, 6500])
             degraded = AF.lowpass_biquad(degraded, TARGET_SR, cutoff)
