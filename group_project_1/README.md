@@ -14,12 +14,6 @@
 
 `Kaggle team name:` Trifonov Rezitdinov
 
-`History of submissions:` 
-
-- 1 - 11.711 (19.04.2026)
-- 2 - 9.396 (22.04.2026)
-- 3 - 2.369 (23.04.2026)
-
 ## 2. Данные
 
 В локальной разработке использовались два сплита:
@@ -169,7 +163,27 @@
 
 Такое распределение согласуется с постановкой соревнования: основной риск связан не с самим словарем числительных, а с переносом на unseen или более сложные голоса и шумные условия.
 
-## 9. Анализ ошибок
+## 9. Submissions history
+1. kaggle_submission_notebook - Version 1
+   Complete · Азат Резитдинов · 26.04 · Notebook kaggle_submission_notebook | Version 1
+   2.383
+
+2. submission.csv  
+   Complete · Sergei Trifonov · 23.04  
+   2.369  
+
+3. submission.csv  
+   Complete · Sergei Trifonov · 22.04  
+   9.396  
+
+4. submission.csv  
+   Error · Sergei Trifonov · 22.04  
+
+5. submission.csv  
+   Complete · Sergei Trifonov · 19.04 · Conformer  
+   11.711  
+
+## 10. Анализ ошибок
 
 По `dev_predictions.csv` можно выделить несколько типичных режимов ошибки:
 
@@ -197,7 +211,7 @@
 - часть ошибок возникает на MP3-файлах, что подтверждает важность устойчивости к деградациям сигнала;
 - в текущем виде декодер не использует языковую модель, поэтому некоторые структурно неверные фразы не исправляются на этапе поиска.
 
-## 10. Что можно улучшить
+## 11. Что можно улучшить
 
 Наиболее реалистичные направления улучшения:
 
@@ -206,5 +220,5 @@
 - улучшить обратный парсер `words_to_num()` и валидацию допустимых словесных шаблонов;
 - попробовать более сильный decoding с ограничениями на грамматику русских числительных.
 
-## 11. Полезные ссылки
+## 12. Полезные ссылки
 - [Group Project 1. Automatic Speech Recognition - [30 pts]](https://github.com/AntonOkhotnikov/ai-talent-hub-itmo-speech-course/blob/main/group-projects/gp1/README.md)
